@@ -11,17 +11,20 @@ def _get_access_token():
     if settings.AUTH_METHOD == "header":
         return OAuth2PasswordBearer(settings.LOGIN_URL)
 
+
 def authorize(token_type: TokenType = "access"):
-    async def _authorize(token: str = Depends(_get_access_token()), service: AuthService = Depends(get_auth_service)):
+    async def _authorize(
+        token: str = Depends(_get_access_token()),
+        service: AuthService = Depends(get_auth_service),
+    ):
         return await service.authorize(token, token_type)
+
     return _authorize
+
 
 def access_token_required():
     return authorize("access")
 
+
 def refresh_token_required():
     return authorize("refresh")
-
-
-
-

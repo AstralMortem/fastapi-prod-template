@@ -1,7 +1,6 @@
 from datetime import datetime, UTC, timedelta
 from core.config import settings
 import jwt
-from jwt import DecodeError, PyJWTError
 
 
 def decode_token(token: str, audience: str | list[str] | None = None, **kwargs):

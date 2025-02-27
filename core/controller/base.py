@@ -129,7 +129,6 @@ def as_route(
                 ]
             else:
                 new_response_model = response_model
-
             return APIRoute(
                 path=path,
                 endpoint=endpoint,
@@ -141,8 +140,7 @@ def as_route(
                 description=description,
                 deprecated=deprecated,
                 operation_id=operation_id,
-                name=name
-                or f"{snake2camel(cls.__name__)}.{snake2camel(function.__name__)}",
+                name=name or f"{cls.__name__}.{snake2camel(function.__name__)}",
                 response_model_include=response_model_include,
                 response_model_exclude=response_model_exclude,
                 response_model_by_alias=response_model_by_alias,

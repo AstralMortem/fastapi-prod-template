@@ -31,20 +31,20 @@ class Settings(BaseSettings):
     USER_LOGIN_FIELDS: list[str] = ["email"]
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_MAX_AGE: int = 60 * 60 * 12 # 12 hours
-    JWT_REFRESH_TOKEN_MAX_AGE: int = 60 * 60 * 24 * 12 # 12 days
+    JWT_ACCESS_TOKEN_MAX_AGE: int = 60 * 60 * 12  # 12 hours
+    JWT_REFRESH_TOKEN_MAX_AGE: int = 60 * 60 * 24 * 12  # 12 days
     JWT_AUTH_AUDIENCE: str = ""
     ALLOW_LOGIN_FIELDS_IN_JWT_TOKEN: bool = False
-    AUTH_METHOD: Literal["cookie", "header"] = "header"
+    AUTH_METHOD: Literal["cookie", "header"] = "cookie"
 
-    AUTH_ACCESS_TOKEN_COOKIE_NAME:str = "access_token"
-    AUTH_REFRESH_TOKEN_COOKIE_NAME:str = "refresh_token"
+    AUTH_ACCESS_TOKEN_COOKIE_NAME: str = "access_token"
+    AUTH_REFRESH_TOKEN_COOKIE_NAME: str = "refresh_token"
     AUTH_COOKIE_PATH: str | None = "/"
     AUTH_COOKIE_DOMAIN: str | None = None
     AUTH_COOKIE_SECURE: bool = False
     AUTH_COOKIE_HTTPONLY: bool = False
     AUTH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] | None = "lax"
-    LOGIN_URL: str = '/api/auth/login'
+    LOGIN_URL: str = "/api/v1/auth/login"
 
 
 settings = Settings()

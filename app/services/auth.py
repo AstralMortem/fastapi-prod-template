@@ -6,12 +6,16 @@ from core.db import get_session
 from core.service import BaseService
 from app.repositories.auth import AuthRepository
 from core.utils.password import PasswordHelper, PasswordHelperProtocol
-from app.models.auth import User
+from app.models.auth import User, RefreshToken
 import uuid
 from fastapi.security import OAuth2PasswordRequestForm
 from core.types import TokenType
-from core.utils.jwt_helper import decode_token, encode_token, DecodeError
-from core.security.tokens import generate_tokens_response
+from core.utils.jwt_helper import decode_token, DecodeError
+from core.security.tokens import (
+    generate_tokens_response,
+    generate_token_logout_response,
+)
+
 
 class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
     def __init__(
@@ -43,7 +47,13 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
 
         return generate_tokens_response(instance)
 
-    async def authorize(self, token:str, token_type: TokenType = "access"):
+    async def logout(self, user: User):
+        if user.refresh_token is not None:
+            refresh_token_model = RefreshToken(**user.refresh_token)
+            await self.repository.session.delete(refresh_token_model)
+        return generate_token_logout_response()
+
+    async def authorize(self, token: str, token_type: TokenType = "access"):
         error = HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
         try:
             decoded = decode_token(token, settings.JWT_AUTH_AUDIENCE)
@@ -51,12 +61,12 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
             raise error
 
         try:
-            user_id = uuid.UUID(decoded.get('sub'))
+            user_id = uuid.UUID(decoded.get("sub"))
         except Exception:
             raise error
 
         try:
-            type_ = decoded.get('type')
+            type_ = decoded.get("type")
             assert type_ == token_type, Exception("Invalid token type")
         except Exception:
             raise error
@@ -64,8 +74,5 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
         return await self.get_by_id(user_id)
 
 
-
-
 async def get_auth_service(session: AsyncSession = Depends(get_session)):
     return AuthService(AuthRepository(session))
-
