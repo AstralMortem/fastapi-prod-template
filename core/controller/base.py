@@ -28,6 +28,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import BaseRoute
 from typing import TypeVar
 
+from core.security.permission import Authorization, Authorize
 from core.utils.string import snake2camel
 
 HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
@@ -79,6 +80,18 @@ def _override_signatures(
         return with_signature(new_signature)(func)
     return func
 
+def _find_authorization_class(cls: type["Controller"], func):
+    old_signature = inspect.signature(func)
+    params = list(old_signature.parameters.values())
+    for param in params:
+        if isinstance(param.default, Authorize):
+            idx = params.index(param)
+            params[idx] = param.replace(default=Depends(param.default.as_dependency(cls)))
+            break
+    new_signature = old_signature.replace(parameters=params)
+    return with_signature(new_signature)(func)
+
+
 
 def as_route(
     path: str,
@@ -118,6 +131,7 @@ def as_route(
 
         def wrapper(cls: type[Controller], *args, **kwargs):
             endpoint = _override_signatures(cls, function, override_args)
+            endpoint = _find_authorization_class(cls, endpoint)
 
             # Check if response model is typevar
             if response_model and type(response_model) == typing.TypeVar:
@@ -171,6 +185,7 @@ class Controller:
     router_callbacks: ClassVar[list[BaseRoute]] = None
     global_dependencies: ClassVar[list[DependClass] | None] = None
     is_deprecated: ClassVar[bool] = False
+    resource_name: ClassVar[str | None] = None
 
     @staticmethod
     @asynccontextmanager

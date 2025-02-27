@@ -30,7 +30,8 @@ class User(Model):
     is_active: Mapped[bool] = mapped_column(default=True)
 
     roles: Mapped[list["Role"]] = relationship(
-        secondary=UserRole.__table__, back_populates="users"
+        secondary=UserRole.__table__, back_populates="users",
+        lazy="joined"
     )
     refresh_token: Mapped["RefreshToken | None"] = relationship(
         lazy="joined", back_populates="user"
@@ -43,7 +44,8 @@ class Role(Model):
         secondary=UserRole.__table__, back_populates="roles"
     )
     permissions: Mapped[list["Permission"]] = relationship(
-        secondary=RolePermission.__table__, back_populates="roles"
+        secondary=RolePermission.__table__, back_populates="roles",
+        lazy="joined"
     )
 
 

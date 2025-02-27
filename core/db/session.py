@@ -18,20 +18,6 @@ from sqlalchemy.ext.asyncio import (
 )
 from core.utils.string import pluralize, camel2snake
 
-session_context: ContextVar[str] = ContextVar("session_context")
-
-
-def get_session_context() -> str:
-    return session_context.get()
-
-
-def set_session_context(session_id: str) -> Token:
-    return session_context.set(session_id)
-
-
-def reset_session_context(context: Token) -> None:
-    session_context.reset(context)
-
 
 engines = {
     "writer": create_async_engine(settings.DATABASE_URL, pool_recycle=3600),
@@ -53,10 +39,6 @@ async_session_factory = async_sessionmaker(
     **settings.SQLALCHEMY_ENGINE_CONFIG,
 )
 
-session: Union[AsyncSession, async_scoped_session] = async_scoped_session(
-    session_factory=async_session_factory,
-    scopefunc=get_session_context,
-)
 
 
 class Model(DeclarativeBase):
@@ -95,13 +77,12 @@ class Model(DeclarativeBase):
 
 
 async def get_session():
-    """
-    Get the database session.
-    This can be used for dependency injection.
 
-    :return: The database session.
-    """
-    try:
-        yield session
-    finally:
-        await session.close()
+    async with async_session_factory() as session:
+        try:
+            yield session
+        except Exception as error:
+            await session.rollback()
+            raise error
+        finally:
+            await session.close()

@@ -1,6 +1,6 @@
 from typing import TypeVar, Generic
 from fastapi import HTTPException, status
-from app.schemas import UpdateSchema
+from core.schema import UpdateSchema
 from core.repository.base import BaseRepository, MODEL, ID
 from core.schema import WriteSchema
 from core.utils.filters import BaseFilterModel

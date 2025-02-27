@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.auth import UserCreateSchema
 from core.config import settings
 from core.db import get_session
 from core.service import BaseService
@@ -72,6 +73,16 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
             raise error
 
         return await self.get_by_id(user_id)
+
+    async def signup(self, data: UserCreateSchema):
+        for field in settings.USER_LOGIN_FIELDS:
+            user = await self.repository.get_by_field(field, getattr(data,field))
+            if user is not None:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, f"User with same {'/'.join(settings.USER_LOGIN_FIELDS)} already exist")
+
+        payload = data.model_dump()
+        payload["hashed_password"] = self.password_helper.hash(payload.pop("password"))
+        return await self.repository.create(payload)
 
 
 async def get_auth_service(session: AsyncSession = Depends(get_session)):

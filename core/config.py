@@ -29,11 +29,11 @@ class Settings(BaseSettings):
 
     # Auth Section
     USER_LOGIN_FIELDS: list[str] = ["email"]
-    JWT_SECRET: str = ""
+    JWT_SECRET: str = "secret"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_MAX_AGE: int = 60 * 60 * 12  # 12 hours
     JWT_REFRESH_TOKEN_MAX_AGE: int = 60 * 60 * 24 * 12  # 12 days
-    JWT_AUTH_AUDIENCE: str = ""
+    JWT_AUTH_AUDIENCE: str = "auth"
     ALLOW_LOGIN_FIELDS_IN_JWT_TOKEN: bool = False
     AUTH_METHOD: Literal["cookie", "header"] = "cookie"
 

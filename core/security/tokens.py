@@ -31,7 +31,7 @@ def _create_cookie(
     key: str, value: str, max_age: int, response: Response | None = None
 ):
     if response is None:
-        response = Response(status.HTTP_204_NO_CONTENT)
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.set_cookie(
         key=key,
         value=value,
