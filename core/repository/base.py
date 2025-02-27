@@ -1,17 +1,18 @@
+import uuid
 from functools import reduce
 from typing import TypeVar, Generic
-from sqlalchemy import select, Select, Sequence
+from sqlalchemy import select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from core.utils.pagination import AbstractPage, AbstractParams, paginate, Params, Page
+from core.utils.pagination import paginate, Params, Page
 from core.utils.filters import BaseFilterModel
 from core.db import Model
 
-MODEL = TypeVar('MODEL', bound=Model)
-ID = TypeVar('ID')
+MODEL = TypeVar("MODEL", bound=Model)
+ID = TypeVar("ID", bound=str | int | uuid.UUID)
+
 
 class BaseRepository(Generic[MODEL, ID]):
     model: type[MODEL]
-    pk_field: ID
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -38,15 +39,14 @@ class BaseRepository(Generic[MODEL, ID]):
         await self.session.refresh(model)
         return model
 
-    async def list_all(self, pagination: Params , filter_model: BaseFilterModel | None = None, joins_: set[str] | None = None) -> Page[MODEL]:
+    async def list_all(
+        self,
+        pagination: Params,
+        filter_model: BaseFilterModel | None = None,
+        joins: set[str] | None = None,
+    ) -> Page[MODEL]:
         query = select(self.model)
-        if joins_ is not None:
-            query = self._join(query, joins_)
-        if filter_model is not None:
-            query = filter_model.filter(query)
-
-        return await paginate(self.session, query, pagination)
-
+        return await self._filter_and_paginate(query, pagination, filter_model, joins)
 
     async def delete(self, model: MODEL) -> MODEL:
         await self.session.delete(model)
@@ -60,15 +60,27 @@ class BaseRepository(Generic[MODEL, ID]):
         result = await self.session.execute(query)
         return result.unique.scalars().all()
 
+    async def _filter_and_paginate(
+        self,
+        query: Select,
+        pagination: Params,
+        filter_model: BaseFilterModel | None = None,
+        joins: set[str] | None = None,
+    ):
+        if joins is not None:
+            query = self._join(query, joins)
+        if filter_model is not None:
+            query = filter_model.filter(query)
+        return await paginate(self.session, query, pagination)
+
     def _join(self, query: Select, joins: set[str] | None):
         if joins is None:
             return query
 
         if not isinstance(joins, set):
-            raise ValueError('Joins must be a set')
+            raise ValueError("Joins must be a set")
 
         return reduce(self._add_join_to_query, joins, query)
-
 
     def _add_join_to_query(self, query: Select, joins: set[str]):
         return getattr(self, "_join_" + joins)(query)

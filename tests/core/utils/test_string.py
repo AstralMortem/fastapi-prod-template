@@ -1,5 +1,5 @@
-# Used from fastapi-utils library https://github.com/fastapiutils/fastapi-utils/blob/master/fastapi_utils/camelcase.py
 import re
+import pytest
 
 
 def snake2camel(snake: str, start_lower: bool = False) -> str:
@@ -13,7 +13,8 @@ def snake2camel(snake: str, start_lower: bool = False) -> str:
     camel = re.sub("([0-9A-Za-z])_(?=[0-9A-Z])", lambda m: m.group(1), camel)
     if start_lower:
         camel = re.sub("(^_*[A-Z])", lambda m: m.group(1).lower(), camel)
-    return camel
+
+    return camel.strip("_*")
 
 
 def camel2snake(camel: str) -> str:
@@ -21,8 +22,20 @@ def camel2snake(camel: str) -> str:
     Converts a camelCase string to snake_case.
     """
     snake = re.sub(r"([a-zA-Z])([0-9])", lambda m: f"{m.group(1)}_{m.group(2)}", camel)
-    snake = re.sub(r"([a-z0-9])([A-Z])", lambda m: f"{m.group(1)}_{m.group(2)}", snake)
+    between = snake
+    snake = re.sub(
+        r"([a-z0-9])([A-Z])", lambda m: f"{m.group(1)}_{m.group(2).lower()}", snake
+    )
+
+    if between == snake:
+        camel = []
+        for i in snake:
+            if i.isupper():
+                camel.append(i)
+        snake = "".join(camel[:-1]) + "_" + camel[-1] + snake.strip("".join(camel))
+
     return snake.lower()
+
 
 def pluralize(word: str):
     vowel_criteria = ["oy", "ey", "ay"]
@@ -39,8 +52,22 @@ def pluralize(word: str):
         return word + "s"
 
 
+def test_snake2camel():
+    assert snake2camel("test_case") == "TestCase"
+    assert snake2camel("test_case", start_lower=True) == "testCase"
+    assert snake2camel("_private_var") == "PrivateVar"
 
 
+def test_camel2snake():
+    assert camel2snake("TestCase") == "test_case"
+    assert camel2snake("testCase") == "test_case"
+    assert camel2snake("HTTPRequest") == "http_request"
+    assert camel2snake("Super_TestCase") == "super_test_case"
 
 
-
+def test_pluralize():
+    assert pluralize("box") == "boxes"
+    assert pluralize("toy") == "toys"
+    assert pluralize("baby") == "babies"
+    assert pluralize("church") == "churches"
+    assert pluralize("dog") == "dogs"

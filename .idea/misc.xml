@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Poetry (fastapi-clean-architecture-template)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (fastapi-clean-architecture-template)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (fastapi-prod-template)" project-jdk-type="Python SDK" />
 </project>
