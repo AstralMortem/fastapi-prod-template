@@ -3,9 +3,8 @@ import uuid
 from fastapi import Depends
 
 from app.schemas import WriteSchema, UpdateSchema
-from core.controller.sets import ReadControllerSet, CRUDController
+from core.controller.sets import CRUDController
 from app.services.auth import AuthService, get_auth_service
-from core.repository.base import ID
 from core.schema import ReadSchema
 
 

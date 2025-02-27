@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from core.config import settings
 from core.utils.module_loading import auto_discover_models
 

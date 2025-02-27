@@ -3,30 +3,24 @@ import typing
 from contextlib import asynccontextmanager
 from typing import (
     Literal,
-    Coroutine,
     ClassVar,
     get_type_hints,
-    TypedDict,
     Optional,
     Any,
     List,
     Union,
     Sequence,
     Dict,
-    Set,
     Type,
     Callable,
-    Annotated,
 )
-import uvicorn
 from fastapi.datastructures import Default, DefaultPlaceholder
 from fastapi.routing import APIRoute
 from fastapi import APIRouter, FastAPI, Depends, params, Response
 from fastapi.params import Depends as DependClass
-from enum import StrEnum, Enum
+from enum import Enum
 from fastapi.types import IncEx
 from fastapi.utils import generate_unique_id
-from fastapi_pagination.bases import AbstractPage
 from makefun import with_signature
 from mashumaro.core.meta.helpers import resolve_type_params
 from pydantic.v1.typing import is_classvar
@@ -34,9 +28,6 @@ from starlette.responses import JSONResponse
 from starlette.routing import BaseRoute
 from typing import TypeVar
 
-from core.config import settings
-from core.utils.pagination import Page
-from fastapi_pagination.default import Page
 from core.utils.string import snake2camel
 
 HTTP_METHOD = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
@@ -189,9 +180,7 @@ class Controller:
         yield
 
     @classmethod
-    def as_router(
-        cls,
-    ):
+    def as_router(cls):
         router = APIRouter(
             prefix=cls.router_prefix,
             tags=cls.router_tags,

@@ -1,5 +1,4 @@
 import re
-import pytest
 
 
 def snake2camel(snake: str, start_lower: bool = False) -> str:

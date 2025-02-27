@@ -10,8 +10,6 @@ REPO = TypeVar("REPO", bound=BaseRepository)
 
 
 class BaseService(Generic[REPO, MODEL, ID]):
-    id = ID
-
     def __init__(self, repo: REPO):
         self.repository = repo
 

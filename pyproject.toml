@@ -17,10 +17,13 @@ fastapi-filter = "^2.0.1"
 uvicorn = "^0.34.0"
 makefun = "^1.15.6"
 mashumaro = "^3.15"
+pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.1"}
+pyjwt = "^2.10.1"
 
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.9.7"
+httpx = "^0.28.1"
 
 
 [tool.poetry.group.test.dependencies]

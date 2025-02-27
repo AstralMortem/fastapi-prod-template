@@ -5,12 +5,7 @@ from .base import Controller, as_route
 from typing import (
     Generic,
     TypeVar,
-    TYPE_CHECKING,
     ClassVar,
-    Annotated,
-    get_args,
-    Self,
-    Union,
     Literal,
 )
 from core.service.base import BaseService, ID

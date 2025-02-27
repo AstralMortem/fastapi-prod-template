@@ -28,9 +28,11 @@ class User(Model):
     email: Mapped[str] = mapped_column(String(250), unique=True)
     hashed_password: Mapped[str]
     is_active: Mapped[bool] = mapped_column(default=True)
+
     roles: Mapped[list["Role"]] = relationship(
         secondary=UserRole.__table__, back_populates="users"
     )
+    refresh_token: Mapped["RefreshToken"] = relationship(lazy="joined", back_populates="user")
 
 
 class Role(Model):
@@ -48,3 +50,9 @@ class Permission(Model):
     roles: Mapped[list[Role]] = relationship(
         secondary=RolePermission.__table__, back_populates="permissions"
     )
+
+class RefreshToken(Model):
+    id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    refresh_token: Mapped[str]
+
+    user: Mapped[User] = relationship(back_populates="refresh_token")

@@ -1,11 +1,9 @@
 import uuid
 from contextvars import ContextVar, Token
-from datetime import datetime, UTC
 from typing import Union
-from sqlalchemy import Update, Delete, Insert, String, Integer, UUID, DateTime
+from sqlalchemy import Update, Delete, Insert, String, Integer, UUID
 from sqlalchemy.orm import (
     Session,
-    sessionmaker,
     mapped_column,
     Mapped,
     declared_attr,
