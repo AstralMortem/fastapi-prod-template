@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 from typing import Literal
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from app.models.auth import User
 from core.config import settings
 from fastapi.security import APIKeyCookie, OAuth2PasswordBearer
@@ -129,5 +129,7 @@ class Authorize:
                 self.scope.left.resource_name = resource_name
             if hasattr(self.scope, "right"):
                 self.scope.right.resource_name = resource_name
-            return self.scope.has_access(user)
+            has_access = self.scope.has_access(user)
+            if has_access is False:
+                raise HTTPException(status_code=401, detail="Access Denied")
         return _as_dependency

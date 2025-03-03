@@ -80,7 +80,7 @@ def _override_signatures(
         return with_signature(new_signature)(func)
     return func
 
-def _find_authorization_class(cls: type["Controller"], func):
+def _override_authorization_class(cls: type["Controller"], func):
     old_signature = inspect.signature(func)
     params = list(old_signature.parameters.values())
     for param in params:
@@ -91,6 +91,17 @@ def _find_authorization_class(cls: type["Controller"], func):
     new_signature = old_signature.replace(parameters=params)
     return with_signature(new_signature)(func)
 
+def _override_response_model(cls: type["Controller"], response_model):
+    # Check if response model is typevar
+    if response_model and type(response_model) == typing.TypeVar:
+        return _get_typevar_class(cls, response_model)
+    # Check if response model is Cast class and typevar, used for Page[TypeVar] pydantic model
+    elif response_model and type(response_model) == tuple:
+        return response_model[0][
+            _get_typevar_class(cls, response_model[1])
+        ]
+    else:
+        return response_model
 
 
 def as_route(
@@ -131,18 +142,10 @@ def as_route(
 
         def wrapper(cls: type[Controller], *args, **kwargs):
             endpoint = _override_signatures(cls, function, override_args)
-            endpoint = _find_authorization_class(cls, endpoint)
+            endpoint = _override_authorization_class(cls, endpoint)
+            # TODO: make authorization for global router dependencies
 
-            # Check if response model is typevar
-            if response_model and type(response_model) == typing.TypeVar:
-                new_response_model = _get_typevar_class(cls, response_model)
-            # Check if response model is Cast class and typevar, used for Page[TypeVar] pydantic model
-            elif response_model and type(response_model) == tuple:
-                new_response_model = response_model[0][
-                    _get_typevar_class(cls, response_model[1])
-                ]
-            else:
-                new_response_model = response_model
+
             return APIRoute(
                 path=path,
                 endpoint=endpoint,
@@ -164,7 +167,7 @@ def as_route(
                 include_in_schema=include_in_schema,
                 responses=responses,
                 response_description=response_description,
-                response_model=new_response_model,
+                response_model=_override_response_model(cls,response_model),
                 response_class=response_class,
                 dependency_overrides_provider=dependency_overrides_provider,
                 callbacks=callbacks,

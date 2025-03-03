@@ -1,6 +1,5 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.schemas.auth import UserCreateSchema
 from core.config import settings
 from core.db import get_session
@@ -14,9 +13,8 @@ from core.types import TokenType
 from core.utils.jwt_helper import decode_token, DecodeError
 from core.security.tokens import (
     generate_tokens_response,
-    generate_token_logout_response,
+    generate_token_logout_response, generate_access_token, generate_refresh_token,
 )
-
 
 class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
     def __init__(
@@ -46,7 +44,13 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
         if new_hash:
             await self.repository.update(instance, {"hashed_password": new_hash})
 
-        return generate_tokens_response(instance)
+        access_token = generate_access_token(instance)
+        refresh_token = generate_refresh_token(instance)
+
+        # TODO: store refresh token in db
+
+
+        return generate_tokens_response(instance, access_token, refresh_token)
 
     async def logout(self, user: User):
         if user.refresh_token is not None:
@@ -54,7 +58,7 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
             await self.repository.session.delete(refresh_token_model)
         return generate_token_logout_response()
 
-    async def authorize(self, token: str, token_type: TokenType = "access"):
+    async def authorize(self, token: str, token_type: TokenType = "access", request: Request | None = None):
         error = HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
         try:
             decoded = decode_token(token, settings.JWT_AUTH_AUDIENCE)
@@ -72,9 +76,10 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
         except Exception:
             raise error
 
-        return await self.get_by_id(user_id)
+        instance = await self.get_by_id(user_id)
+        await self.on_after_authorized(token, instance, request)
 
-    async def signup(self, data: UserCreateSchema):
+    async def signup(self, data: UserCreateSchema, request: Request | None = None):
         for field in settings.USER_LOGIN_FIELDS:
             user = await self.repository.get_by_field(field, getattr(data,field))
             if user is not None:
@@ -82,7 +87,16 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
 
         payload = data.model_dump()
         payload["hashed_password"] = self.password_helper.hash(payload.pop("password"))
-        return await self.repository.create(payload)
+        created_user = await self.repository.create(payload)
+        await self.on_after_signup(request, created_user, payload)
+        return created_user
+
+    async def on_after_signup(self,request: Request | None, instance: User, payload: dict[str, any]):
+        """Called after user created in db"""
+
+    async def on_after_authorized(self, token: str, instance: User, request:Request | None):
+        """Called after user authorized"""
+
 
 
 async def get_auth_service(session: AsyncSession = Depends(get_session)):

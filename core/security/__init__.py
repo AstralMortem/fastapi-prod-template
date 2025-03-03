@@ -5,7 +5,8 @@ from .permission import (
     refresh_token_required,
     AuthService,
     get_auth_service,
-Authorize,
-HasPermission,
-HasRole
+    Authorize,
+    HasPermission,
+    HasRole,
+    Actions
 )

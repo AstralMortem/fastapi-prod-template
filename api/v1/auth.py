@@ -1,5 +1,5 @@
 from app.models.auth import User
-from app.schemas.auth import UserCreateSchema
+from app.schemas.auth import UserCreateSchema, UserReadSchema
 from core.controller import as_route, Controller
 
 from fastapi import Depends
@@ -32,7 +32,10 @@ class AuthController(Controller):
     async def logout(self, user: User = Depends(access_token_required())):
         return await self.service.logout(user)
 
-
-    @as_route("/signup", method="POST")
+    @as_route("/signup", method="POST", response_model=UserReadSchema)
     async def signup(self, data: UserCreateSchema):
         return await self.service.signup(data)
+
+    @as_route("/me", method="GET")
+    async def get_me(self, user: User = Depends(access_token_required())):
+        return user

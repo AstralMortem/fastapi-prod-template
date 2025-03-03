@@ -51,16 +51,16 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-def generate_tokens_response(user: User):
+def generate_tokens_response(user: User, access_token:str, refresh_token:str):
     if settings.AUTH_METHOD == "cookie":
         response = _create_cookie(
             settings.AUTH_ACCESS_TOKEN_COOKIE_NAME,
-            generate_access_token(user),
+            access_token,
             settings.JWT_ACCESS_TOKEN_MAX_AGE,
         )
         response = _create_cookie(
             settings.AUTH_REFRESH_TOKEN_COOKIE_NAME,
-            generate_refresh_token(user),
+            refresh_token,
             settings.JWT_REFRESH_TOKEN_MAX_AGE,
             response,
         )
@@ -68,8 +68,8 @@ def generate_tokens_response(user: User):
 
     if settings.AUTH_METHOD == "header":
         payload = TokenResponse(
-            access_token=generate_access_token(user),
-            refresh_token=generate_refresh_token(user),
+            access_token=access_token,
+            refresh_token=refresh_token
         )
 
         return JSONResponse(
