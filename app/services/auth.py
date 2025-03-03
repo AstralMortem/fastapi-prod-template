@@ -3,10 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.auth import UserCreateSchema
 from core.config import settings
 from core.db import get_session
+from core.repository.base import ID, MODEL
+from core.schema import UpdateSchema
 from core.service import BaseService
-from app.repositories.auth import AuthRepository
+from app.repositories.auth import AuthRepository, RoleRepository
 from core.utils.password import PasswordHelper, PasswordHelperProtocol
-from app.models.auth import User, RefreshToken
+from app.models.auth import User, RefreshToken, Role
 import uuid
 from fastapi.security import OAuth2PasswordRequestForm
 from core.types import TokenType
@@ -78,8 +80,9 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
 
         instance = await self.get_by_id(user_id)
         await self.on_after_authorized(token, instance, request)
+        return instance
 
-    async def signup(self, data: UserCreateSchema, request: Request | None = None):
+    async def signup(self, data: UserCreateSchema, request: Request | None = None, safe: bool = True):
         for field in settings.USER_LOGIN_FIELDS:
             user = await self.repository.get_by_field(field, getattr(data,field))
             if user is not None:
@@ -87,12 +90,35 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
 
         payload = data.model_dump()
         payload["hashed_password"] = self.password_helper.hash(payload.pop("password"))
-        payload["is_active"] = settings.USER_IS_ACTIVE_DEFAULT
+        if safe:
+            payload["is_active"] = settings.USER_IS_ACTIVE_DEFAULT
         created_user = await self.repository.create(payload)
         # Add default role to user
-        created_user = await self._set_default_role(created_user)
+        if safe:
+            created_user = await self._set_default_role(created_user)
         await self.on_after_signup(request, created_user, payload)
         return created_user
+
+    async def update_instance(self, user: User, data: UpdateSchema, request: Request | None = None) -> MODEL:
+        payload = data.model_dump(exclude_none=True, exclude_defaults=True)
+        for field in settings.USER_LOGIN_FIELDS:
+            if field in payload:
+                instance = await self.repository.get_by_field(field, getattr(data, field))
+                if instance is not None:
+                    raise HTTPException(status.HTTP_403_FORBIDDEN, f"User with same {'/'.join(settings.USER_LOGIN_FIELDS)} already exist")
+
+        if "password" in payload:
+            payload.pop("password")
+        if "is_active" in payload:
+            payload.pop("is_active")
+
+        return await self._update(user, payload, request)
+
+    async def update(self, pk: ID, data: UpdateSchema, request: Request | None = None) -> MODEL:
+        instance = await self.get_by_id(pk)
+        await self.update_instance(instance, data, request)
+
+
 
     async def _set_default_role(self, instance: User):
         if settings.USER_DEFAULT_ROLE_NAME:
@@ -113,6 +139,16 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
         """Called after user authorized"""
 
 
+class RoleService(BaseService[RoleRepository, Role, settings.DEFAULT_PK_FIELD_TYPE]):
+
+    async def get_by_rolename(self, rolename:str):
+        instance = await self.repository.get_by_field("codename", rolename)
+        if instance is None:
+            raise self._not_found_error()
+        return instance
 
 async def get_auth_service(session: AsyncSession = Depends(get_session)):
     return AuthService(AuthRepository(session))
+
+async def get_role_service(session: AsyncSession = Depends(get_session)):
+    return RoleService(RoleRepository(session))

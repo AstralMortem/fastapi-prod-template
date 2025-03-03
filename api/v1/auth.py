@@ -1,17 +1,19 @@
 from app.models.auth import User
-from app.schemas.auth import UserCreateSchema, UserReadSchema
-from core.controller import as_route, Controller
+from app.schemas.auth import UserCreateSchema, UserReadSchema, RoleReadSchema, RoleCreateSchema, RoleUpdateSchema
+from app.services.auth import RoleService, get_role_service, get_auth_service, AuthService
+from core.controller import as_route, Controller, CRUDControllerSet
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from core.security import (
-    TokenResponse,
-    access_token_required,
-    AuthService,
-    get_auth_service, Authorize,
+
+from core.security.mixins import SuperUser
+from core.security.permission import (
+    access_token_required, Authorize, HasPermission, Actions
 )
+from core.security.tokens import TokenResponse
+
 from core.config import settings
-from core.security.permission import HasRole, HasPermission
+
 
 
 class AuthController(Controller):
@@ -36,6 +38,12 @@ class AuthController(Controller):
     async def signup(self, data: UserCreateSchema):
         return await self.service.signup(data)
 
-    @as_route("/me", method="GET")
-    async def get_me(self, user: User = Depends(access_token_required())):
-        return user
+class RoleController(CRUDControllerSet[RoleService, settings.DEFAULT_PK_FIELD_TYPE, RoleReadSchema, RoleCreateSchema, RoleUpdateSchema]):
+    router_prefix = "/roles"
+    resource_name = "role"
+    service: RoleService = Depends(get_role_service)
+    global_dependencies = [Authorize(SuperUser | HasPermission(Actions.ALL))]
+
+    @as_route("/{codename}", method="GET", response_model=RoleReadSchema)
+    async def get(self, codename:str):
+        return await self.service.get_by_rolename(codename)

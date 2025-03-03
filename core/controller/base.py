@@ -104,6 +104,16 @@ def _override_response_model(cls: type["Controller"], response_model):
         return response_model
 
 
+def _parse_global_dependencies(cls: type["Controller"], dependencies: Optional[Sequence[params.Depends] | Sequence[Authorize]] = None):
+    resolved_dependencies = []
+    if dependencies is not None:
+        for dependency in dependencies:
+            if isinstance(dependency, Authorize):
+                resolved_dependencies.append(Depends(dependency.as_dependency(cls)))
+            else:
+                resolved_dependencies.append(dependency)
+    return resolved_dependencies
+
 def as_route(
     path: str,
     method: HTTP_METHOD,
@@ -114,7 +124,7 @@ def as_route(
     response_model: Any = Default(None),
     status_code: Optional[int] = None,
     tags: Optional[List[Union[str, Enum]]] = None,
-    dependencies: Optional[Sequence[params.Depends]] = None,
+    dependencies: Optional[Sequence[params.Depends] | Sequence[Authorize]] = None,
     summary: Optional[str] = None,
     description: Optional[str] = None,
     response_description: str = "Successful Response",
@@ -143,8 +153,6 @@ def as_route(
         def wrapper(cls: type[Controller], *args, **kwargs):
             endpoint = _override_signatures(cls, function, override_args)
             endpoint = _override_authorization_class(cls, endpoint)
-            # TODO: make authorization for global router dependencies
-
 
             return APIRoute(
                 path=path,
@@ -152,7 +160,7 @@ def as_route(
                 methods=[method],
                 status_code=status_code,
                 tags=tags or [cls.__name__],
-                dependencies=dependencies,
+                dependencies=_parse_global_dependencies(cls, dependencies),
                 summary=summary,
                 description=description,
                 deprecated=deprecated,
@@ -201,7 +209,7 @@ class Controller:
             prefix=cls.router_prefix,
             tags=cls.router_tags,
             lifespan=cls.lifespan,
-            dependencies=cls.global_dependencies,
+            dependencies=_parse_global_dependencies(cls, cls.global_dependencies),
             callbacks=cls.router_callbacks,
             responses=cls.router_responses,
             deprecated=cls.is_deprecated,

@@ -36,7 +36,6 @@ class Settings(BaseSettings):
     JWT_AUTH_AUDIENCE: str = "auth"
     ALLOW_LOGIN_FIELDS_IN_JWT_TOKEN: bool = False
     AUTH_METHOD: Literal["cookie", "header"] = "cookie"
-
     AUTH_ACCESS_TOKEN_COOKIE_NAME: str = "access_token"
     AUTH_REFRESH_TOKEN_COOKIE_NAME: str = "refresh_token"
     AUTH_COOKIE_PATH: str | None = "/"
@@ -47,6 +46,7 @@ class Settings(BaseSettings):
     LOGIN_URL: str = "/api/v1/auth/login"
     USER_IS_ACTIVE_DEFAULT: bool = True
     USER_DEFAULT_ROLE_NAME: str | None = 'USER'
+    SUPERUSER_DEFAULT_ROLE_NAME: str | None = None
 
 
 settings = Settings()

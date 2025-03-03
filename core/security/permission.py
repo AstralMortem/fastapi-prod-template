@@ -37,6 +37,7 @@ class Actions(StrEnum):
     UPDATE = "update"
     DELETE = "delete"
     READ = "read"
+    ALL = "*"
 
 class Authorization:
     resource_name: str
@@ -70,11 +71,12 @@ class _AND(Authorization):
         self.left = left
         self.right = right
 
-    def has_access(self, user: User):
+    def has_access(self, user: User) :
         return self.left.has_access(user) and self.right.has_access(user)
 
     def __repr__(self):
         return f"({self.left} & {self.right})"
+
 
 class HasPermission(Authorization):
 
@@ -89,6 +91,7 @@ class HasPermission(Authorization):
     def has_access(self, user: User) -> User | bool:
         permissions = []
         # Convert permission to list of codenames
+        print(user)
         for role in user.roles:
             permissions.extend(list(map(lambda x: x.codename, role.permissions)))
         permissions = set(permissions)
