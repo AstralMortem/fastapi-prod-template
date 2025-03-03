@@ -87,9 +87,24 @@ class AuthService(BaseService[AuthRepository, User, uuid.UUID]):
 
         payload = data.model_dump()
         payload["hashed_password"] = self.password_helper.hash(payload.pop("password"))
+        payload["is_active"] = settings.USER_IS_ACTIVE_DEFAULT
         created_user = await self.repository.create(payload)
+        # Add default role to user
+        created_user = await self._set_default_role(created_user)
         await self.on_after_signup(request, created_user, payload)
         return created_user
+
+    async def _set_default_role(self, instance: User):
+        if settings.USER_DEFAULT_ROLE_NAME:
+            role = await self.repository.get_role_by_codename(settings.USER_DEFAULT_ROLE_NAME)
+            if role is None:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, f"Role with name {settings.USER_DEFAULT_ROLE_NAME} not exists")
+            instance.roles.append(role)
+            await self.repository.session.commit()
+            await self.repository.session.refresh(instance)
+            return instance
+        return instance
+
 
     async def on_after_signup(self,request: Request | None, instance: User, payload: dict[str, any]):
         """Called after user created in db"""

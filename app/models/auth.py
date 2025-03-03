@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy import UUID, String, ForeignKey
 from core.db import Model
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from core.config import settings
 
 # Many-to-many User and Role
 class UserRole(Model):
@@ -27,7 +27,7 @@ class User(Model):
     )
     email: Mapped[str] = mapped_column(String(250), unique=True)
     hashed_password: Mapped[str]
-    is_active: Mapped[bool] = mapped_column(default=True)
+    is_active: Mapped[bool] = mapped_column(default=settings.USER_IS_ACTIVE_DEFAULT)
 
     roles: Mapped[list["Role"]] = relationship(
         secondary=UserRole.__table__, back_populates="users",

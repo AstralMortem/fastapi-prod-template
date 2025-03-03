@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     AUTH_COOKIE_HTTPONLY: bool = False
     AUTH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] | None = "lax"
     LOGIN_URL: str = "/api/v1/auth/login"
+    USER_IS_ACTIVE_DEFAULT: bool = True
+    USER_DEFAULT_ROLE_NAME: str | None = 'USER'
 
 
 settings = Settings()
