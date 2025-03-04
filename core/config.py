@@ -48,5 +48,9 @@ class Settings(BaseSettings):
     USER_DEFAULT_ROLE_NAME: str | None = 'USER'
     SUPERUSER_DEFAULT_ROLE_NAME: str | None = None
 
+    #Celery section
+    CELERY_BACKEND_URL: str = ""
+    CELERY_BROKER_URL: str = ""
+
 
 settings = Settings()
